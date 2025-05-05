@@ -1,0 +1,11 @@
+# Ignora a pasta do ambiente virtual
+venv/
+
+# Ignora arquivos temporários do VSCode e Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos e pastas do VSCode
+.vscode/
