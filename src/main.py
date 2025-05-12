@@ -1,131 +1,158 @@
-import tkinter as Tk
-from tkinter import filedialog, ttk
+import tkinter as tk
+from tkinter import filedialog, messagebox
 import pandas as pd
-import folium
-from folium import IFrame, plugins
 import geopandas as gpd
-from io import BytesIO
-import base64
-from PIL import ImageTk, Image
-import requests
+import folium
 import webbrowser
-
-frame_table = None  # Variável global inicializada
-
-# Função para abrir o arquivo de dados (CSV, JSON, XML)
+import sys
 
 
-def open_file():
-    file_path = filedialog.askopenfilename(
-        title="Selecione um arquivo",
-        filetypes=[
-            ("Arquivos CSV", "*.csv"),
-            ("Arquivos JSON", "*.json"),
-            ("Arquivos XML", "*.xml")
-        ]
-    )
+class GeoApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Visualizador Geoespacial v2.0")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
-    if file_path:
-        print(f"Arquivo selecionado: {file_path}")
+        # Configuração da interface
+        self.setup_ui()
+        self.data = None
 
-        if file_path.endswith(".csv"):
-            data = pd.read_csv(file_path)
-        elif file_path.endswith(".json"):
-            data = pd.read_json(file_path)
-        elif file_path.endswith(".xml"):
-            data = pd.read_xml(file_path)
+    def setup_ui(self):
+        """Configura os elementos da interface"""
+        self.frame = tk.Frame(self.root, padx=20, pady=20)
+        self.frame.pack(expand=True, fill=tk.BOTH)
 
-        print(data.head())  # printa os dados no terminal
+        tk.Button(
+            self.frame,
+            text="Carregar Arquivo",
+            command=self.safe_open_file,  # Método modificado
+            width=25,
+            height=2
+        ).pack(pady=10)
 
-        display_table(data)
-        create_map(data)
+        self.map_btn = tk.Button(
+            self.frame,
+            text="Gerar Mapa",
+            command=self.create_map,
+            width=25,
+            height=2,
+            state=tk.DISABLED
+        )
+        self.map_btn.pack(pady=10)
+
+        self.status = tk.Label(
+            self.frame, text="Pronto para carregar arquivo", fg="gray")
+        self.status.pack(pady=10)
+
+    def safe_open_file(self):
+        """Método seguro para abrir arquivos"""
+        try:
+            # Cria uma janela Tkinter temporária
+            temp_root = tk.Tk()
+            temp_root.withdraw()  # Esconde a janela
+            # Garante que ficará visível
+            temp_root.attributes('-topmost', True)
+
+            file_path = filedialog.askopenfilename(
+                parent=temp_root,
+                title="Selecione um arquivo",
+                filetypes=[
+                    ("CSV", "*.csv"),
+                    ("JSON", "*.json;*.geojson"),
+                    ("XML", "*.xml")
+                ]
+            )
+            temp_root.destroy()  # Fecha a janela temporária
+
+            if file_path:
+                self.process_file(file_path)
+
+        except Exception as e:
+            messagebox.showerror(
+                "Erro Fatal", f"O programa encontrou um erro:\n{str(e)}")
+            self.on_close()
+
+    def process_file(self, file_path):
+        """Processa o arquivo selecionado"""
+        try:
+            if file_path.endswith(".csv"):
+                self.data = pd.read_csv(file_path)
+                # Converte para GeoDataFrame se tiver coordenadas
+                if all(col in self.data.columns for col in ["latitude", "longitude"]):
+                    self.data = gpd.GeoDataFrame(
+                        self.data,
+                        geometry=gpd.points_from_xy(
+                            self.data.longitude, self.data.latitude)
+                    )
+
+            elif file_path.endswith((".json", ".geojson")):
+                self.data = gpd.read_file(file_path)
+
+            elif file_path.endswith(".xml"):
+                self.data = pd.read_xml(file_path)
+
+            self.map_btn.config(state=tk.NORMAL)
+            self.status.config(
+                text=f"Arquivo carregado: {file_path.split('/')[-1]}", fg="green")
+
+        except Exception as e:
+            messagebox.showerror(
+                "Erro", f"Falha ao processar arquivo:\n{str(e)}")
+
+    def create_map(self):
+        """Gera o mapa com Folium"""
+        if self.data is None:
+            messagebox.showwarning("Aviso", "Nenhum dado carregado!")
+            return
+
+        try:
+            # Determina o centro do mapa
+            if isinstance(self.data, gpd.GeoDataFrame):
+                centroid = self.data.geometry.centroid
+                center = [centroid.y.mean(), centroid.x.mean()]
+            else:
+                center = [self.data["latitude"].mean(
+                ), self.data["longitude"].mean()]
+
+            # Cria o mapa
+            m = folium.Map(location=center, zoom_start=6)
+
+            # Adiciona marcadores
+            if isinstance(self.data, gpd.GeoDataFrame):
+                for idx, row in self.data.iterrows():
+                    if row.geometry.geom_type == "Point":
+                        folium.Marker(
+                            [row.geometry.y, row.geometry.x],
+                            popup=f"ID: {idx}"
+                        ).add_to(m)
+            else:
+                for idx, row in self.data.iterrows():
+                    folium.Marker(
+                        [row["latitude"], row["longitude"]],
+                        popup=f"ID: {idx}"
+                    ).add_to(m)
+
+            # Salva e abre o mapa
+            map_path = "mapa.html"
+            m.save(map_path)
+            webbrowser.open(map_path)
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao gerar mapa:\n{str(e)}")
+
+    def on_close(self):
+        """Método para encerrar o programa corretamente"""
+        self.root.destroy()
+        sys.exit()
 
 
-def display_table(data):
-    # Limpa qualquer coisa antiga
-    for widget in frame_table.winfo_children():
-        widget.destroy()
-
-    # Cria a tabela
-    tree = ttk.Treeview(frame_table, columns=data.columns, show="headings")
-
-    # Configura as colunas
-    for col in data.columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=120)
-
-    # Preenche com os dados
-    for _, row in data.iterrows():
-        tree.insert("", "end", values=list(row))
-
-    tree.pack(expand=True, fill="both")
-
-
-# Função para criar o mapa com folium
-
-def create_map(data):
-    # Garante que tem colunas de latitude e longitude
-    if "latitude" not in data.columns or "longitude" not in data.columns:
-        print("Dados não contêm colunas 'latitude' e 'longitude'")
-        return
-
-    # Centraliza o mapa pela média das coordenadas
-    center = [data["latitude"].mean(), data["longitude"].mean()]
-    m = folium.Map(location=center, zoom_start=6)
-
-    # Adiciona marcadores
-    for _, row in data.iterrows():
-        lat = row["latitude"]
-        lon = row["longitude"]
-        popup = str(row.get("cidade", f"{lat}, {lon}"))
-        folium.Marker(location=[lat, lon], popup=popup).add_to(m)
-
-    # Salva o mapa
-    map_file = "map.html"
-    m.save(map_file)
-
-    # Abre no navegador
-    open_map(map_file)
-
-# Função para abrir o mapa no navegador
-
-
-def open_map(map_file):
-    webbrowser.open(map_file)
-
-# Função para criar a interface gráfica com Tkinter
-
-
-def create_interface():
-    global frame_table
-
-    root = tk.Tk()  # Aqui usamos 'root' para a janela principal
-    root.title("Análise Geoespacial")
-    root.geometry("800x600")  # Define o tamanho da janela
-
-    # Frame para os botões
-    frame_buttons = ttk.Frame(root)
-    frame_buttons.pack(pady=10)
-
-    # Botão para abrir o arquivo
-    open_button = tk.Button(
-        frame_buttons, text="Abrir Arquivo", command=open_file)
-    open_button.pack()
-
-    # Botão para gerar o mapa
-    map_button = tk.Button(
-        frame_buttons, text="Gerar Mapa", command=create_map)
-    map_button.pack()
-
-    # Frame para a tabela
-    frame_table = ttk.Frame(root)  # Usamos ttk.Frame para o frame da tabela
-    frame_table.pack(pady=20)
-
-    root.mainloop()  # Mantém a janela aberta
-
-
-# Chama a função para criar a interface
-create_interface()
-# Executa a interface gráfica
 if __name__ == "__main__":
-    create_interface()  # Cria e exibe a interface
+    root = tk.Tk()
+    app = GeoApp(root)
+
+    # Configuração adicional para Windows
+    if sys.platform == "win32":
+        from ctypes import windll
+        windll.shcore.SetProcessDpiAwareness(1)
+
+    root.mainloop()

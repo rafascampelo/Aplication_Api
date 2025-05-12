@@ -1,21 +1,21 @@
-folium==0.19.5
-geopandas==1.0.1
 pandas==2.2.3
+geopandas==0.14.3
+folium==0.19.5
 shapely==2.1.0
 pyproj==3.7.1
 pyogrio==0.10.0
 pytz==2025.2
 requests==2.32.3
-six==1.17.0
-certifi==2025.4.26
-charset-normalizer==3.4.2
-idna==3.10
-MarkupSafe==3.0.2
+six>=1.16.0
+certifi>=2023.7.22
+charset-normalizer>=3.4.2
+idna>=3.6
+MarkupSafe>=2.1.3
 narwhals==1.38.0
-packaging==25.0
-python-dateutil==2.9.0.post0
+packaging>=23.1
+python-dateutil>=2.9.0.post0
 tzdata==2025.2
-urllib3==2.4.0
-xyzservices==2025.4.0
+urllib3>=2.1.0
+xyzservices>=2023.10.1
 
 # codigo para baixar as pendencias =  pip install -r requirements.txt
