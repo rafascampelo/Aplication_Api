@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<locations>
+  <location>
+    <id>1</id>
+    <latitude>-23.55052</latitude>
+    <longitude>-46.633308</longitude>
+    <nome>São Paulo</nome>
+  </location>
+  <location>
+    <id>2</id>
+    <latitude>-22.906847</latitude>
+    <longitude>-43.172896</longitude>
+    <nome>Rio de Janeiro</nome>
+  </location>
+  <location>
+    <id>3</id>
+    <latitude>-19.8157</latitude>
+    <longitude>-43.9542</longitude>
+    <nome>Belo Horizonte</nome>
+  </location>
+  <location>
+    <id>4</id>
+    <latitude>-30.034647</latitude>
+    <longitude>-51.217658</longitude>
+    <nome>Porto Alegre</nome>
+  </location>
+  <location>
+    <id>5</id>
+    <latitude>-8.047562</latitude>
+    <longitude>-34.8770</longitude>
+    <nome>Recife</nome>
+  </location>
+</locations>

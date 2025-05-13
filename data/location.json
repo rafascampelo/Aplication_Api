@@ -1,0 +1,7 @@
+[
+  {"id": 1, "latitude": -23.55052, "longitude": -46.633308, "nome": "São Paulo"},
+  {"id": 2, "latitude": -22.906847, "longitude": -43.172896, "nome": "Rio de Janeiro"},
+  {"id": 3, "latitude": -19.8157, "longitude": -43.9542, "nome": "Belo Horizonte"},
+  {"id": 4, "latitude": -30.034647, "longitude": -51.217658, "nome": "Porto Alegre"},
+  {"id": 5, "latitude": -8.047562, "longitude": -34.8770, "nome": "Recife"}
+]
