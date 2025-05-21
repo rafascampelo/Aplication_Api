@@ -1,13 +1,15 @@
 # src/utils.py
-
-import pandas as pd
 import json
 import xml.etree.ElementTree as ET
+import pandas as pd
 
 
 def carregar_dados(filepath):
     if filepath.endswith('.csv'):
-        df = pd.read_csv(filepath)
+        try:
+            df = pd.read_csv(filepath, encoding='utf-8')
+        except UnicodeDecodeError:
+            df = pd.read_csv(filepath, encoding='latin1')
 
     elif filepath.endswith('.json'):
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -30,5 +32,12 @@ def carregar_dados(filepath):
     else:
         raise ValueError(
             'Formato de arquivo não suportado. Use CSV, JSON ou XML.')
+    df.columns = df.columns.str.lower()
+
+    # Garante que as colunas essenciais estão presentes
+    colunas_necessarias = {'latitude', 'longitude', 'nome'}
+    if not colunas_necessarias.issubset(df.columns):
+        raise ValueError(
+            f"O arquivo deve conter as colunas: {colunas_necessarias}")
 
     return df
