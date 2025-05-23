@@ -1,11 +1,19 @@
 INSTRUÇÕES PARA ABRIR O PROJETO ( Windows )
 
-para abrir o ambiente virtual:
-cria ambiente : python -m venv venv
-abri o ambiente : .\venv\Scripts\Activate
+# 1. Vá até a pasta do projeto
+cd caminho\da\sua\pasta
 
-para instalar as dependências, coloque no bash:
+# 2. Crie o ambiente virtual
+python -m venv venv
+
+# 3. Ative o ambiente
+.\venv\Scripts\Activate
+
+# 4. Instale as dependências
 pip install -r requirements.txt
+
+# 5. Execute o projeto
+python main.py
 
 Lógica da Construção do Projeto
 Agora vou explicar o raciocínio por trás de cada parte do projeto para que você entenda como cada arquivo se encaixa na estrutura:
