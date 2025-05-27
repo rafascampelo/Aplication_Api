@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from typing import Union
 
 def load_data(file_path: str) -> Union[pd.DataFrame, None]:
+  
     """Carrega dados de arquivos CSV, JSON ou XML"""
     if not file_path:
         return None

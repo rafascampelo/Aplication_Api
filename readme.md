@@ -1,76 +1,99 @@
 INSTRUÇÕES PARA ABRIR O PROJETO ( Windows )
 
 # 1. Vá até a pasta do projeto
+
 cd caminho\da\sua\pasta
 
 # 2. Crie o ambiente virtual
+
 python -m venv venv
 
 # 3. Ative o ambiente
+
 .\venv\Scripts\Activate
 
 # 4. Instale as dependências
+
 pip install -r requirements.txt
 
 # 5. Execute o projeto
+
 python main.py
 
-Lógica da Construção do Projeto
-Agora vou explicar o raciocínio por trás de cada parte do projeto para que você entenda como cada arquivo se encaixa na estrutura:
+data_loader.py
+Função load_data(file_path: str) -> Union[pd.DataFrame, None]
 
-1. Função de Leitura e Tratamento dos Dados (utils.py)
-   O arquivo utils.py é responsável por ler e tratar os dados de arquivos CSV, JSON e XML. Cada tipo de arquivo tem uma função própria, que usa a biblioteca correta para ler os dados e retorná-los em um formato de lista de dicionários.
+Lê o arquivo que o usuário manda.
 
-CSV: Usamos a biblioteca csv para ler os dados e armazená-los em um formato adequado.
+Aceita CSV, JSON e XML (só pelo sufixo do arquivo).
 
-JSON: Utilizamos json para carregar o arquivo e transformá-lo em uma lista de dicionários.
+Para CSV, usa pandas.read_csv.
 
-XML: Usamos a biblioteca xml.etree.ElementTree para fazer o parsing do XML e retornar os dados como uma lista de dicionários.
+Para JSON, abre o arquivo, carrega com json.load e transforma em DataFrame usando pd.json_normalize.
 
-Essas funções estão separadas em blocos, para que quando você quiser adicionar mais tipos de arquivos no futuro, só precise seguir o mesmo padrão.
+Para XML, faz o parsing com xml.etree.ElementTree, encontra cada <item>, e monta uma lista de dicionários que vira DataFrame.
 
-2. Funções de Visualização (viz.py)
-   Aqui é onde acontece a criação e exibição do mapa. Usamos a biblioteca Plotly para a visualização dos dados geoespaciais:
+Se der erro, printa o erro e devolve None.
 
-A função exibir_mapa recebe os dados de latitude e longitude e os plota no mapa.
+Função validate_data(df: pd.DataFrame) -> bool
 
-O mapa interativo é gerado com a função go.Scattergeo do Plotly. Usamos esse gráfico para exibir os pontos de localização e personalizar a visualização.
+Checa se o DataFrame tem as colunas mínimas para coordenadas.
 
-Essas funções são responsáveis por transformar os dados geoespaciais em uma visualização interativa.
+Busca colunas que possam ser latitude (lat ou latitude) e longitude (lon, longitude, lng).
 
-3. Interface Gradio (interface.py)
-   A interface de usuário foi criada com Gradio. A interface tem:
+Retorna True só se achar as duas. Caso contrário, False.
 
-Entrada de Arquivo: O usuário pode selecionar o tipo de arquivo (CSV, JSON ou XML) e enviar o arquivo para o sistema.
+interface.py
+Função process_file(file_info)
 
-Botão de Visualização: Quando o arquivo é carregado, o sistema chama a função de leitura dos dados (de acordo com o tipo de arquivo) e depois chama a função de visualização para mostrar o mapa.
+Recebe o arquivo enviado pelo usuário (via Gradio).
 
-Botão de Tabela: Depois de exibir o mapa, o usuário pode clicar para ver os dados em formato de tabela.
+Usa load_data pra ler esse arquivo.
 
-A interface é simples, com a interação mínima, mas suficiente para testar a funcionalidade.
+Gera o mapa com generate_map (do map_generator.py) usando o DataFrame.
 
-4. Entrypoint (main.py)
-   O main.py é o entrypoint do projeto. Ele apenas importa e executa a função launch() da interface (que está em interface.py). Isso é o que realmente inicia o aplicativo Gradio.
+Transforma o mapa do Folium em HTML (com generate_html_content) para mostrar na interface.
 
-Resumo da Lógica
-Leitura de Arquivos:
+Se der erro, retorna um HTML com a mensagem do erro.
 
-O arquivo de entrada (CSV, JSON ou XML) é lido pelas funções em utils.py.
+Função generate_html_content(folium_map)
 
-Cada tipo de arquivo é tratado por uma função diferente.
+Salva o mapa do Folium em uma variável na memória (string HTML).
 
-Exibição de Mapa:
+Retorna o HTML pronto pra Gradio mostrar.
 
-Após ler os dados, o código em viz.py usa Plotly para criar um mapa interativo com os pontos de latitude e longitude.
+Função create_interface()
 
-Interface do Usuário:
+Cria a interface Gradio (blocos, botão, input de arquivo e um espaço pra mostrar o mapa).
 
-Gradio é usado para criar a interface onde o usuário seleciona o arquivo, visualiza o mapa e vê a tabela de dados.
+Define o botão que chama process_file e mostra o resultado no componente HTML.
 
-A lógica de exibição é controlada pela interface, que chama as funções de leitura e visualização.
+map_generator.py
+Função generate_map(data: pd.DataFrame)
 
-Estrutura do Projeto:
+Recebe o DataFrame e gera o mapa interativo com Folium.
 
-O projeto é modularizado, com funções específicas para cada parte: leitura de dados, visualização e interface.
+Normaliza os nomes das colunas (tudo minúsculo).
 
-Isso facilita a manutenção e expansão do projeto, pois você pode adicionar novos tipos de arquivos ou novos tipos de visualizações sem mexer no restante do código.
+Tenta achar as colunas de latitude e longitude.
+
+Converte os valores para número, descarta inválidos.
+
+Cria o mapa centralizado na média das coordenadas.
+
+Usa MarkerCluster para agrupar os pontos no mapa.
+
+Adiciona marcadores, e se tiver coluna de nome/nome, coloca popup com nome.
+
+Se algo der errado, gera mapa vazio com mensagem.
+
+Função create_empty_map(message: str)
+
+Gera um mapa vazio centralizado no 0,0, com um marcador vermelho e popup com mensagem de erro.
+
+main.py
+Configura variáveis de ambiente para evitar problemas no Windows (tipo diretório temporário e variáveis do PROJ_LIB do Folium).
+
+Importa a interface (create_interface) e lança o app Gradio (launch()).
+
+(não sei o que faltou para funcionar!)

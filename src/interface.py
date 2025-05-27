@@ -7,22 +7,22 @@ import uuid
 from src.map_generator import generate_map
 from src.data_loader import load_data
 
-def process_file(file_info):
-    if not file_info:
+def process_file(file):
+    if not file:
         return "<div style='color:red;padding:20px'>Nenhum arquivo enviado</div>"
-    
+
     try:
-        # Carrega os dados
-        df = load_data(file_info.name)
-        
-        # Gera o mapa Folium
+        file_path = file.name if hasattr(file, 'name') else file
+        print("Arquivo recebido:", file_path)
+
+        df = load_data(file_path)
+        print("Preview dos dados:", df.head())
+
         m = generate_map(df)
-        
-        # Método à prova de falhas para gerar HTML
         html_content = generate_html_content(m)
-        
+
         return html_content
-        
+
     except Exception as e:
         return f"<div style='color:red;padding:20px'>ERRO: {str(e)}</div>"
 

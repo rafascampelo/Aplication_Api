@@ -3,6 +3,8 @@ from folium.plugins import MarkerCluster
 import pandas as pd
 
 def generate_map(data: pd.DataFrame):
+    print("Colunas:", data.columns)
+    print("Primeiras linhas:", data.head())
     """Gera mapa Folium a partir dos dados"""
     if data is None or data.empty:
         return create_empty_map("Dados inválidos ou vazios")
